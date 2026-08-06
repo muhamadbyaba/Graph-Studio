@@ -52,7 +52,8 @@ Badge/Chip, ProgressBar, Skeleton.
 
 **Domain components:**
 - **Viewport toolbar** — select / move / rotate / scale / route / measure / section.
-- **PropertyInspector** — grouped, unit-aware fields; locked/AI-generated indicators.
+- **PropertyInspector** — grouped, unit-aware fields; indicators for values that are locked by the
+  engineer or were proposed by the copilot and not yet accepted.
 - **ValidationChip** — pass ✓ / warn ⚠ / violation ✕; click → trace panel.
 - **TracePanel** — formula + inputs + steps + clause + assumptions (Doc 03).
 - **BOQTable** — virtualized, grouped, each line links back to its object(s).
