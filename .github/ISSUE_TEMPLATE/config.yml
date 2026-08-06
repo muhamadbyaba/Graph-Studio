@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/security/advisories
+    url: https://github.com/muhamadbyaba/Graph-Studio/security/advisories/new
     about: Please report vulnerabilities privately through the Security tab, not as a public issue. See SECURITY.md.
   - name: Question or idea
-    url: https://github.com/discussions
+    url: https://github.com/muhamadbyaba/Graph-Studio/discussions
     about: For questions about how something works, or to sound out an idea before opening an issue.

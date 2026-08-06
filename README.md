@@ -8,7 +8,7 @@ Draw a building's systems and the engineering follows every change — sizes, co
 pressure balance, structural design and a priced bill of quantities, recomputed live, with
 the working shown for every number.
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/muhamadbyaba/Graph-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/muhamadbyaba/Graph-Studio/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A523.6-339933.svg)](https://nodejs.org)
 [![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-success.svg)](#why-zero-dependencies)
@@ -80,8 +80,8 @@ a projection.
 ## Try it
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
-cd REPO
+git clone https://github.com/muhamadbyaba/Graph-Studio.git
+cd Graph-Studio
 npm install
 npm start
 ```

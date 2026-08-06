@@ -13,8 +13,8 @@ this document covers the parts that still need thought.
 ## Minimum viable production setup
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
-cd REPO
+git clone https://github.com/muhamadbyaba/Graph-Studio.git
+cd Graph-Studio
 npm ci
 
 export NODE_ENV=production

@@ -70,5 +70,5 @@ First public release.
   body ceilings and rate limits.
 - 71 tests running against a real server, covering the properties documented in `SECURITY.md`.
 
-[Unreleased]: https://github.com/OWNER/REPO/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/REPO/releases/tag/v0.1.0
+[Unreleased]: https://github.com/muhamadbyaba/Graph-Studio/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/muhamadbyaba/Graph-Studio/releases/tag/v0.1.0
