@@ -1,0 +1,22 @@
+{
+  "name": "@buildgraph/engineering-core",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Deterministic, jurisdiction-parameterised engineering rules engine for building services and reinforced concrete. Runs on Node's native TypeScript with no runtime dependencies and no build step.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=23.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}
