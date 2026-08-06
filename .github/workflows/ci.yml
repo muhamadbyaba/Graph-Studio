@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck and test (Node ${{ matrix.node }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ['24.x']
+        include:
+          # The engine and server are pure Node with no native code, so one Windows and one macOS
+          # run is enough to catch path-handling regressions without tripling the matrix.
+          - os: windows-latest
+            node: '24.x'
+          - os: macos-latest
+            node: '24.x'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+  smoke:
+    name: Boot and exercise the server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Start the server
+        env:
+          PORT: '4317'
+          HOST: '127.0.0.1'
+          BG_SESSION_SECRET: ci-only-secret-value-not-used-in-production
+          BG_ALLOW_REGISTRATION: 'true'
+          BG_DATA_DIR: ${{ runner.temp }}/buildgraph-data
+        run: |
+          npm start &
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:4317/api/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:4317/api/health
+
+      - name: Verify the app shell and hardening headers
+        run: |
+          set -euo pipefail
+          headers=$(curl -sSI http://127.0.0.1:4317/)
+          echo "$headers"
+          echo "$headers" | grep -qi 'content-security-policy'
+          echo "$headers" | grep -qi 'x-content-type-options: nosniff'
+          echo "$headers" | grep -qi 'x-frame-options: DENY'
+
+      - name: Verify an anonymous caller is refused
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4317/api/state)
+          test "$status" = "401"
+
+      - name: Verify a full design round-trip
+        run: |
+          set -euo pipefail
+          jar=$(mktemp)
+          curl -sf -c "$jar" -X POST http://127.0.0.1:4317/api/auth/register \
+            -H 'content-type: application/json' \
+            -d '{"username":"ciuser","password":"continuous-integration-secret"}' > /dev/null
+          curl -sf -b "$jar" -X POST http://127.0.0.1:4317/api/command \
+            -H 'content-type: application/json' \
+            -d '[{"type":"NodeAdded","id":"lav","kind":"fixture","x":14,"y":7,"fixtureType":"Lavatory"},
+                 {"type":"PipeAdded","id":"p_lav","from":"tank","to":"lav","medium":"cold"}]' > /dev/null
+          curl -sf -b "$jar" http://127.0.0.1:4317/api/report | grep -q 'Bill of Quantities'
+          curl -sf -b "$jar" http://127.0.0.1:4317/api/boq.csv | grep -q 'Project Total'
+          echo "design report and BOQ export both render"
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+      - run: npm ci
+      # The server ships no runtime dependencies; this guards the browser assets and dev tooling.
+      - run: npm audit --audit-level=high

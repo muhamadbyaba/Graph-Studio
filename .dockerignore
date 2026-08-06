@@ -1,0 +1,13 @@
+node_modules
+apps/studio/node_modules
+packages/*/node_modules
+apps/studio/public/vendor
+apps/studio/data
+data
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+coverage

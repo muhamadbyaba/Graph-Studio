@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # The browser assets move together; reviewing them as one pull request is less noise.
+      browser-assets:
+        patterns: ['three', 'web-ifc']
+      tooling:
+        patterns: ['typescript', '@types/*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

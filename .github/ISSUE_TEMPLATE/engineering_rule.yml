@@ -1,0 +1,85 @@
+name: Engineering rule or code constant
+description: Propose a new rule, correct an existing one, or verify a constant
+labels: [engineering]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project treats engineering correctness as a first-class concern. Every constant
+        that has not been checked against a published source carries a `VERIFY` marker, and
+        this is the form for resolving one, correcting a rule, or proposing a new one.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change
+      options:
+        - Verify a constant currently marked VERIFY
+        - Correct an existing rule
+        - Propose a new rule
+        - Add or correct a jurisdiction pack
+    validations:
+      required: true
+
+  - type: input
+    id: discipline
+    attributes:
+      label: Discipline
+      placeholder: Plumbing (supply) / Drainage / Vent / Electrical / HVAC / Structural
+    validations:
+      required: true
+
+  - type: input
+    id: jurisdiction
+    attributes:
+      label: Jurisdiction
+      description: Which code pack this applies to, or "new" if you are proposing one.
+      placeholder: GULF
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should change
+      description: The current value or behaviour, and what it should be instead.
+      placeholder: |
+        `supply.velocityLimitColdMps` is currently 2.0 m/s and marked VERIFY.
+        SBC 701 clause … specifies …
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: Authoritative source
+      description: |
+        The code, standard or handbook this comes from, with edition and clause or table
+        number. This is what turns a value from "representative" into "verified", so please
+        be specific.
+      placeholder: |
+        Saudi Building Code SBC 701, 2018 edition, Table 604.x
+        ASHRAE Handbook — Fundamentals 2021, Chapter 21
+    validations:
+      required: true
+
+  - type: textarea
+    id: worked-example
+    attributes:
+      label: Worked example
+      description: |
+        A hand calculation with inputs and the expected result. This becomes the golden test
+        that keeps the rule honest, so the more precise the better.
+      placeholder: |
+        0.35 L/s in PPR OD25 PN20 (SDR 6, id 16.6 mm):
+        v = 4Q/(πd²) = 4 × 0.00035 / (π × 0.0166²) = 1.617 m/s
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: I understand this project produces decision-support output that requires Engineer-of-Record sign-off, and that a change here does not transfer that responsibility.
+          required: true

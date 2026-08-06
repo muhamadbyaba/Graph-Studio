@@ -1,0 +1,58 @@
+name: Feature request
+description: Suggest a capability the platform should have
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: |
+        What you are trying to do and where the software gets in the way. Describing the
+        engineering situation is more useful than describing a proposed control.
+      placeholder: |
+        On a multi-storey job I need to see how a stack's DFU load accumulates per floor
+        before I commit to a riser diameter. Today I have to …
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: How you imagine it working. Sketches, references to other tools and rough notes are all fine.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the system
+      multiple: true
+      options:
+        - Engineering core (rules, units, propagation)
+        - A discipline (plumbing, electrical, HVAC, structural)
+        - Jurisdictions and code packs
+        - Drawing canvas and 3D
+        - Import (IFC, DWG, PDF, schedules)
+        - Deliverables (report, bill of quantities)
+        - Design copilot
+        - Collaboration and workspaces
+        - Deployment and operations
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today instead
+      description: The manual workaround, spreadsheet or other tool this would replace.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to build it?
+      options:
+        - label: I would be interested in contributing this myself
+          required: false

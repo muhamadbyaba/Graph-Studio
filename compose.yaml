@@ -1,0 +1,30 @@
+services:
+  studio:
+    build: .
+    image: buildgraph-studio
+    restart: unless-stopped
+    ports:
+      # Bound to loopback: put a TLS-terminating reverse proxy in front before exposing it.
+      - "127.0.0.1:4317:4317"
+    environment:
+      NODE_ENV: production
+      # Required. Generate once and keep it: changing it signs everyone out.
+      #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      BG_SESSION_SECRET: ${BG_SESSION_SECRET:?set BG_SESSION_SECRET before starting}
+      # Set true once TLS is terminated upstream, so session cookies are issued with Secure.
+      BG_BEHIND_TLS_PROXY: ${BG_BEHIND_TLS_PROXY:-false}
+      # Closed by default in production. Open it, create the accounts you need, then close it.
+      BG_ALLOW_REGISTRATION: ${BG_ALLOW_REGISTRATION:-false}
+      # Without a key the design assistant answers deterministically from the engine.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      # Accounts, sessions, live documents and saved projects. Back this up.
+      - buildgraph-data:/data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  buildgraph-data:
