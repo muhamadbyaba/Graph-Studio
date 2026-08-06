@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BuildGraph Studio — MEP &amp; Structural BIM</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="importmap">
+      { "imports": { "three": "/vendor/three.module.js", "three/addons/controls/OrbitControls.js": "/vendor/OrbitControls.js", "web-ifc": "/vendor/web-ifc/web-ifc-api.js" } }
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◑</span>
+        <div>
+          <h1>BuildGraph <span>Studio</span></h1>
+          <p class="tag">Draw it — the engineering follows every change</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolgroup" id="tools">
+          <button data-tool="select" class="tool active" title="Select / move (V)">▣ Select</button>
+          <button data-tool="pipe" class="tool" title="Draw pipe (P)">╱ Pipe</button>
+          <button data-tool="slab" class="tool" title="Slab: click ≥3 nodes to enclose a floor panel, Enter to close (S)">▦ Slab</button>
+          <button data-tool="delete" class="tool" title="Delete (D)">⌫ Delete</button>
+        </div>
+        <div class="toolgroup">
+          <button id="medium" title="Toggle the medium of newly drawn pipes">medium: cold</button>
+        </div>
+        <div class="toolgroup" id="views">
+          <button data-view="schematic" class="view active" title="Color schematic">◱ Schematic</button>
+          <button data-view="cad" class="view" title="CAD (double-line, mono)">▤ CAD</button>
+          <button data-view="3d" class="view" title="3D model">◈ 3D</button>
+        </div>
+        <div class="toolgroup"><button id="assist" title="Auto-route & auto-fix">⚡ Assist</button><button id="ask" title="Grounded design assistant">🤖 Ask</button><button id="pressure" title="Pressure map — solve residual pressure at every fixture & highlight the critical path">🌡 Pressure</button></div>
+        <div class="toolgroup">
+          <button id="undo" title="Undo (Ctrl+Z)">↶</button>
+          <button id="redo" title="Redo (Ctrl+Y)">↷</button>
+        </div>
+        <div class="toolgroup">
+          <button id="library" title="Component library (all disciplines)">⛁ Library</button>
+          <button id="projects" title="Save / open projects">🖫 Projects</button>
+          <button id="projInfo" title="Project info shown on the report cover">ℹ Info</button>
+          <button id="report" title="Printable design report">🖨 Report</button>
+          <button id="boqCsv" title="Download the Bill of Quantities as a CSV (Excel)">⬇ BOQ</button>
+          <button id="import" title="Import project / schedule / underlay">⇪ Import</button>
+          <button id="export" title="Export project JSON">⇩ Export</button>
+          <button id="reset" class="ghost" title="Reset">Reset</button>
+        </div>
+        <button id="workspaceBtn" class="user-btn" title="Workspaces and collaborators">◨ Workspace</button>
+        <button id="accountBtn" class="user-btn" title="Your account">👤</button>
+        <select id="jurisdictionSel" class="jur-sel" title="Code jurisdiction — switch to re-validate the design against different codes"></select>
+        <div class="jur" id="jurisdiction">—</div>
+      </div>
+    </header>
+
+    <div id="assistMenu" class="assist-menu" hidden>
+      <div class="assist-title">Auto-design</div>
+      <button data-act="route-cold">⚡ Auto-route cold supply (from tank)</button>
+      <button data-act="route-hot">⚡ Auto-route hot supply (from tank)</button>
+      <button data-act="route-drain">⚡ Auto-route drainage (from sewer)</button>
+      <button data-act="route-vent">⚡ Auto-route vent (from roof terminal)</button>
+      <button data-act="route-power">⚡ Auto-route power (from panel)</button>
+      <button data-act="route-air">⚡ Auto-route ducts (from AHU)</button>
+      <button data-act="fix-slopes">✓ Fix under-slope drains</button>
+    </div>
+
+    <main class="layout">
+      <!-- Palette -->
+      <aside class="palette">
+        <h2>Palette</h2>
+        <p class="hint"><b>Click</b> an item then click the canvas to place it (or drag it on). Then
+          pick the <b>Pipe</b> tool and click two items to connect them.</p>
+        <div class="chip" draggable="true" data-kind="source" data-type="">🛢 Tank / Source</div>
+        <div class="chip" draggable="true" data-kind="outlet" data-type="">⛢ Sewer / Outlet</div>
+        <div class="chip" draggable="true" data-kind="vent-terminal" data-type="">⇡ Vent Terminal (Roof)</div>
+        <div class="chip" draggable="true" data-kind="panel" data-type="">▤ Electrical Panel (DB)</div>
+        <div class="chip" draggable="true" data-kind="load" data-type="">◉ Outlet / Load</div>
+        <div class="chip" draggable="true" data-kind="ahu" data-type="">▥ Air Handler (AHU)</div>
+        <div class="chip" draggable="true" data-kind="diffuser" data-type="">◈ Air Diffuser</div>
+        <div class="chip" draggable="true" data-kind="support" data-type="">△ Column / Support</div>
+        <div class="chip" draggable="true" data-kind="junction" data-type="">◇ Junction</div>
+        <h3>Fixtures</h3>
+        <div id="fixturePalette"></div>
+
+        <h3>Files</h3>
+        <p class="hint">Drop a file on the canvas, or use Import:
+          <br />• <b>.json</b> project → loads it
+          <br />• <b>.csv</b> fixture schedule → places fixtures
+          <br />• <b>image / .pdf</b> → background underlay to trace
+          <br />• <b>.ifc / .dwg</b> → attached as reference</p>
+        <div id="underlayInfo" class="underlay-info"></div>
+        <label class="row"><input type="checkbox" id="underlayToggle" checked /> <span>Show underlay</span></label>
+        <input type="range" id="underlayOpacity" min="0" max="100" value="45" title="Underlay opacity" />
+        <label class="row" style="margin-top:6px"><span class="hint" style="margin:0">IFC plan — section-cut height</span></label>
+        <input type="range" id="cutHeight" min="2" max="98" value="50" title="Height of the horizontal cut through the imported 3D model (drag to pick a storey / above sill height)" />
+      </aside>
+
+      <!-- Canvas -->
+      <section class="canvas-wrap" id="canvasWrap">
+        <svg id="canvas" viewBox="0 0 26 15" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="view3d" class="view3d" hidden></div>
+        <div class="dropcue" id="dropcue">Drop file to import</div>
+        <div id="activeProduct" class="active-product" hidden></div>
+        <div class="legend">
+          <span><i class="sw cold"></i> cold</span>
+          <span><i class="sw hot"></i> hot</span>
+          <span><i class="sw drainage"></i> drainage</span>
+          <span><i class="sw vent"></i> vent</span>
+          <span><i class="sw power"></i> power</span>
+          <span><i class="sw air"></i> air</span>
+          <span><i class="sw beam"></i> beam/column</span>
+          <span><i class="sw slab"></i> slab</span>
+          <span><i class="sw fail"></i> validation fail</span>
+          <span class="scale">grid = 1 m</span>
+        </div>
+      </section>
+
+      <!-- Inspector -->
+      <aside class="inspector">
+        <div class="ins-block" id="selection">
+          <h2>Inspector</h2>
+          <p class="hint">Select a pipe or fixture to see its engineering.</p>
+        </div>
+
+        <div class="ins-block" id="hydraulicsBlock">
+          <h2>Hydraulic network <span class="beta">live solver</span></h2>
+          <div id="hydraulics"></div>
+        </div>
+
+        <div class="ins-block" id="dwvBlock">
+          <h2>Drainage &amp; vent <span class="beta">network check</span></h2>
+          <div id="dwv"></div>
+        </div>
+
+        <div class="ins-block">
+          <h2>Bill of Quantities</h2>
+          <table class="boq"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Cost</th></tr></thead><tbody id="boq"></tbody></table>
+          <div class="validation" id="validation"></div>
+        </div>
+
+        <div class="ins-block">
+          <h2>Audit log</h2>
+          <ol id="log" class="log"></ol>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span id="status">ready</span>
+      <span class="dim">Every number comes from the deterministic rules engine — none are invented.</span>
+    </footer>
+
+    <div id="libraryModal" class="modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div><h2>Component Library</h2><p class="hint" style="margin:2px 0 0">Real components across every discipline — pick, and add your own.</p></div>
+          <button id="libClose" class="ghost" title="Close">✕</button>
+        </div>
+        <div class="modal-controls">
+          <select id="libDiscipline"><option value="">All disciplines</option></select>
+          <input id="libSearch" type="search" placeholder="Search components…" />
+          <button id="libAddToggle" class="primary">＋ Add item</button>
+        </div>
+        <form id="libAddForm" class="lib-add" hidden>
+          <input name="discipline" placeholder="discipline — e.g. electrical" required />
+          <input name="category" placeholder="category — e.g. cable" required />
+          <input name="name" placeholder="name — e.g. Cu cable 35 mm²" required />
+          <input name="spec" placeholder='spec JSON — e.g. {"csaMm2":35}' />
+          <input name="unit" placeholder="unit — m / nr / m²" />
+          <input name="price" type="number" step="0.01" placeholder="price (optional)" />
+          <button type="submit" class="primary">Save to library</button>
+        </form>
+        <div class="lib-count" id="libCount"></div>
+        <div class="lib-list" id="libList"></div>
+      </div>
+    </div>
+
+    <div id="metaModal" class="modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div><h2>Project information</h2><p class="hint" style="margin:2px 0 0">Appears on the report cover &amp; is saved with the project.</p></div>
+          <button id="metaClose" class="ghost" title="Close">✕</button>
+        </div>
+        <div class="meta-form">
+          <label class="hint">Project title<br/><input id="mTitle" placeholder="e.g. Al Noor Tower — Levels 1–3" /></label>
+          <label class="hint">Client<br/><input id="mClient" placeholder="Client name" /></label>
+          <label class="hint">Engineer of Record<br/><input id="mEngineer" placeholder="Engineer / firm" /></label>
+          <label class="hint">Project number<br/><input id="mProjectNo" placeholder="e.g. 2026-014" /></label>
+          <label class="hint">Revision<br/><input id="mRevision" placeholder="e.g. A" /></label>
+          <button id="mSave" class="primary">Save project info</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="projectsModal" class="modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div><h2>Projects</h2><p class="hint" style="margin:2px 0 0">Save your work on the server and reopen it later — it survives restarts.</p></div>
+          <button id="projClose" class="ghost" title="Close">✕</button>
+        </div>
+        <div class="modal-controls">
+          <input id="projName" placeholder="Project name…" />
+          <button id="projSave" class="primary">Save current</button>
+        </div>
+        <div class="lib-list" id="projList"></div>
+      </div>
+    </div>
+
+    <div id="assistantModal" class="modal" hidden>
+      <div class="modal-card assistant-card">
+        <div class="modal-head">
+          <div><h2>Design Assistant</h2><p class="hint" style="margin:2px 0 0">Grounded in your model — every number is engine-computed, never guessed.</p></div>
+          <button id="askClose" class="ghost" title="Close">✕</button>
+        </div>
+        <div id="askLog" class="ask-log"></div>
+        <div class="ask-suggest">
+          <button data-q="Give me a summary">Summary</button>
+          <button data-q="What fails?">What fails?</button>
+          <button data-q="What is the total cost?">Cost</button>
+          <button data-q="Why this size?">Why this size?</button>
+          <button data-q="How many fixtures?">Quantities</button>
+        </div>
+        <form id="askForm" class="ask-form"><input id="askInput" placeholder="Ask… e.g. what fails? · total cost · why this size?" autocomplete="off" /><button class="primary" type="submit">Ask</button></form>
+      </div>
+    </div>
+
+    <div id="workspaceModal" class="modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <h2>Workspaces</h2>
+            <p class="hint" style="margin:2px 0 0">A workspace holds one drawing, its saved projects and its
+              component library. Invite a collaborator and you both edit it live.</p>
+          </div>
+          <button id="wsClose" class="ghost" title="Close">✕</button>
+        </div>
+        <div class="lib-list" id="wsList"></div>
+        <div class="modal-controls">
+          <input id="wsNewName" placeholder="New workspace name…" maxlength="60" />
+          <button id="wsCreate" class="primary">Create</button>
+        </div>
+        <div id="wsMembers" class="ws-members"></div>
+      </div>
+    </div>
+
+    <div id="accountModal" class="modal" hidden>
+      <div class="modal-card" style="max-width:420px">
+        <div class="modal-head">
+          <div><h2>Account</h2><p class="hint" style="margin:2px 0 0" id="accountWho"></p></div>
+          <button id="accountClose" class="ghost" title="Close">✕</button>
+        </div>
+        <form id="passwordForm" class="meta-form" autocomplete="off">
+          <label class="hint">Current password<br /><input id="pwCurrent" type="password" autocomplete="current-password" required /></label>
+          <label class="hint">New password<br /><input id="pwNew" type="password" autocomplete="new-password" minlength="10" required /></label>
+          <button class="primary" type="submit">Change password</button>
+        </form>
+        <button id="logoutBtn" class="ghost" style="width:100%;margin-top:10px">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Sign-in gate. Shown until /api/auth/me reports a session; blocks the app underneath. -->
+    <div id="authGate" class="auth-gate" hidden>
+      <div class="auth-card">
+        <div class="auth-brand"><span class="logo">◑</span>
+          <div><h2>BuildGraph <span>Studio</span></h2><p class="hint">MEP &amp; structural engineering intelligence</p></div>
+        </div>
+        <div class="auth-tabs">
+          <button id="tabSignIn" class="auth-tab active" data-mode="signin">Sign in</button>
+          <button id="tabRegister" class="auth-tab" data-mode="register">Create account</button>
+        </div>
+        <form id="authForm" autocomplete="on">
+          <label class="hint">Username<br /><input id="authUser" name="username" autocomplete="username"
+            required minlength="3" maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9_\-]{1,30}[a-zA-Z0-9]" /></label>
+          <label class="hint">Password<br /><input id="authPass" name="password" type="password"
+            autocomplete="current-password" required minlength="10" maxlength="256" /></label>
+          <p class="auth-hint" id="authHint">At least 10 characters.</p>
+          <p class="auth-error" id="authError" hidden></p>
+          <button class="primary" type="submit" id="authSubmit">Sign in</button>
+        </form>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json,.csv,.ifc,.dwg,.pdf,image/*" hidden />
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
