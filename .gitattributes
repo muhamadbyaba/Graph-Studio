@@ -1,0 +1,12 @@
+# Normalise line endings in the repository; check out native on each platform.
+* text=auto eol=lf
+
+*.png binary
+*.wasm binary
+*.jpg binary
+*.webp binary
+
+# Keep generated lockfiles and vendored assets out of diffs and language statistics.
+package-lock.json linguist-generated=true -diff
+apps/studio/public/vendor/** linguist-vendored=true
+docs/** linguist-documentation=true

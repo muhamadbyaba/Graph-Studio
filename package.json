@@ -1,0 +1,23 @@
+{
+  "name": "buildgraph",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Engineering intelligence platform for building services: a deterministic, jurisdiction-aware rules engine with a live MEP and structural design studio.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=23.6.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "start": "npm run start --workspace @buildgraph/studio",
+    "dev": "npm run dev --workspace @buildgraph/studio",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run typecheck && npm run test",
+    "vendor": "node apps/studio/scripts/vendor.mjs"
+  }
+}
