@@ -1,0 +1,21 @@
+# Code owners are requested for review automatically on every pull request.
+# Syntax: https://docs.github.com/articles/about-code-owners
+
+# Everything, by default.
+*                                   @muhamadbyaba
+
+# The engineering rules decide what gets built. A wrong constant here is a wrong
+# pipe on a real site, so changes to the engine and its jurisdiction packs always
+# get an explicit look.
+/packages/engineering-core/          @muhamadbyaba
+
+# The security model and the checks that hold it up.
+/SECURITY.md                         @muhamadbyaba
+/apps/studio/src/auth/               @muhamadbyaba
+/apps/studio/src/http/               @muhamadbyaba
+/apps/studio/test/security.test.ts   @muhamadbyaba
+
+# Supply chain and release surface.
+/.github/                            @muhamadbyaba
+/Dockerfile                          @muhamadbyaba
+/compose.yaml                        @muhamadbyaba
