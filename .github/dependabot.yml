@@ -11,6 +11,13 @@ updates:
         patterns: ['three', 'web-ifc']
       tooling:
         patterns: ['typescript', '@types/*']
+    ignore:
+      # @types/node must track the Node major this project actually supports and tests against,
+      # not the newest one published. Types for a newer runtime describe APIs that are absent at
+      # execution time, so code would typecheck cleanly and then fail in production. Raise this
+      # deliberately, together with `engines.node` and the CI matrix.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /

@@ -11,7 +11,8 @@
     "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "vendor": "node scripts/vendor.mjs",
-    "postinstall": "node scripts/vendor.mjs"
+    "postinstall": "node scripts/vendor.mjs",
+    "test:browser": "node test/browser-smoke.mjs"
   },
   "engines": {
     "node": ">=23.6.0"
@@ -22,7 +23,7 @@
     "web-ifc": "^0.0.57"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^24.0.0",
     "typescript": "^5.7.2"
   }
 }
