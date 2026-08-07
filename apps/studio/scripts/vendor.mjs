@@ -10,15 +10,23 @@
  *
  * Run automatically on `npm install`; run manually with `npm run vendor`.
  */
-import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, stat } from 'node:fs/promises';
 import { dirname, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const vendorDir = join(appRoot, 'public', 'vendor');
 
+/**
+ * `optional: true` marks an asset that only some versions of a package ship. three.js split its
+ * ESM build in r16x: `three.module.js` became a thin entry that does `import … from
+ * './three.core.js'`, so copying the entry alone leaves the browser requesting a file that is not
+ * there. The failure is silent to a typecheck and to the test suite — the module graph only breaks
+ * when a browser actually loads the 3D view — so the copy has to cover both layouts.
+ */
 const ASSETS = [
   { from: ['three', 'build/three.module.js'], to: 'three.module.js' },
+  { from: ['three', 'build/three.core.js'], to: 'three.core.js', optional: true },
   { from: ['three', 'examples/jsm/controls/OrbitControls.js'], to: 'OrbitControls.js' },
   { from: ['web-ifc', 'web-ifc-api.js'], to: 'web-ifc/web-ifc-api.js' },
   { from: ['web-ifc', 'web-ifc.wasm'], to: 'web-ifc/web-ifc.wasm' },
@@ -54,7 +62,7 @@ async function main() {
     const [packageName, subpath] = asset.from;
     const source = await resolveAsset(packageName, subpath);
     if (source === null) {
-      missing.push(`${packageName}/${subpath}`);
+      if (!asset.optional) missing.push(`${packageName}/${subpath}`);
       continue;
     }
     const target = join(vendorDir, asset.to);
@@ -63,12 +71,51 @@ async function main() {
     copied.push(asset.to);
   }
 
+  // A vendored ES module that imports a sibling which was not copied produces a 404 at load time
+  // and nothing earlier. Resolve those references now, while it is still cheap to notice.
+  const unresolved = await findUnresolvedImports(copied);
+  if (unresolved.length > 0) {
+    console.error('vendor: a copied module imports a file that was not copied:');
+    for (const { file, specifier } of unresolved) console.error(`  ${file} imports ${specifier}`);
+    console.error('  add it to ASSETS in this script, or the browser will fail to load the module.');
+    process.exitCode = 1;
+    return;
+  }
+
   if (missing.length > 0) {
     // Not fatal: `npm install --ignore-scripts` or a partial install should not break the tree.
     console.warn(`vendor: skipped ${missing.length} asset(s) — run "npm install" then "npm run vendor".`);
     for (const name of missing) console.warn(`  missing: ${name}`);
   }
   if (copied.length > 0) console.log(`vendor: ${copied.length} asset(s) → public/vendor`);
+}
+
+/**
+ * Check every copied JavaScript file for relative imports whose target is not also present.
+ * Static analysis is enough here: these are published build artefacts, not dynamic code.
+ */
+async function findUnresolvedImports(copied) {
+  const problems = [];
+  for (const name of copied) {
+    if (!name.endsWith('.js') && !name.endsWith('.mjs')) continue;
+    const path = join(vendorDir, name);
+    const source = await readFile(path, 'utf8');
+    // Matched on the `from` (or dynamic `import(`) rather than by pairing it with a preceding
+    // `import` keyword: a bundled module's named-import list runs to thousands of characters, so
+    // any bounded gap between the two is a bound that will eventually be too small.
+    const specifiers = new Set(
+      [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*)['"](\.[^'"]*)['"]/g)].map((m) => m[1]),
+    );
+    for (const specifier of specifiers) {
+      const target = resolve(dirname(path), specifier);
+      try {
+        await stat(target);
+      } catch {
+        problems.push({ file: name, specifier });
+      }
+    }
+  }
+  return problems;
 }
 
 main().catch((err) => {
