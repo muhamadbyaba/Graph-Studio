@@ -440,11 +440,13 @@ ceiling.
 ## Testing
 
 ```bash
-npm run check     # typecheck + every test
-npm test          # 245 tests across both workspaces
+npm run check          # typecheck + every test
+npm test               # 245 tests across both workspaces
+npm start &            # the browser check needs a running server
+npm run test:browser   # 13 checks driving the real UI in headless Chrome
 ```
 
-Three kinds of test, deliberately:
+Four kinds of test, deliberately:
 
 **Golden calculations.** Specific numbers checked against hand calculations, with the working in a
 comment — 1 L/s through 100 m of 50 mm at C = 150 losing 0.606 m; a tee losing exactly three times
@@ -459,6 +461,14 @@ same event log under two jurisdiction packs produces two correct, different desi
 **Security tests.** A real server on an ephemeral port, checking each claim in `SECURITY.md`:
 anonymous access refused, cross-workspace access invisible, traversal contained, forgery rejected,
 injection neutralised.
+
+**A browser smoke test.** Headless Chrome driven over the DevTools Protocol, with no Puppeteer or
+Playwright to install: sign in, draw, switch views, open the panels, and fail on any console error.
+It exists because everything above it is blind to the browser. A dependency upgrade once passed the
+typecheck, all 245 tests and the server boot check while the 3D view was completely broken —
+three.js had split its ES module build across two files and only one was being copied, so the module
+graph failed at load time and nowhere else. Anything that only breaks on a real page needs a real
+page to catch it.
 
 ## Status and roadmap
 

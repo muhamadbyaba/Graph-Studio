@@ -104,6 +104,42 @@ jobs:
           curl -sf -b "$jar" http://127.0.0.1:4317/api/boq.csv | grep -q 'Project Total'
           echo "design report and BOQ export both render"
 
+  browser:
+    name: Browser smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - run: npm ci
+
+      # Guards the class of failure nothing else here can see: a typecheck, the whole test suite
+      # and a server boot check all passed once while the 3D view was broken, because the module
+      # graph only fails when a real browser loads it.
+      - name: Start the server
+        env:
+          PORT: '4317'
+          HOST: '127.0.0.1'
+          BG_SESSION_SECRET: ci-only-secret-value-not-used-in-production
+          BG_ALLOW_REGISTRATION: 'true'
+          BG_DATA_DIR: ${{ runner.temp }}/buildgraph-browser-data
+        run: |
+          npm start &
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:4317/api/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:4317/api/health
+
+      - name: Drive the UI in headless Chrome
+        env:
+          BASE: http://127.0.0.1:4317
+        run: node apps/studio/test/browser-smoke.mjs
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest
