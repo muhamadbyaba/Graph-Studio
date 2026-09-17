@@ -23,7 +23,7 @@
     "web-ifc": "^0.0.77"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^24.13.4",
     "typescript": "^7.0.2"
   }
 }
